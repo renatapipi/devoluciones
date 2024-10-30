@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Matrículas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            margin: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .entry {
+            background-color: #d0e7d0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #388E3C;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Registro de Matrículas</h1>
+    <input type="text" id="matricula" placeholder="Número de Matrícula" required>
+    <input type="text" id="nombre" placeholder="Nombre" required>
+    <button onclick="agregarRegistro()">Guardar</button>
+    <button onclick="exportarExcel()">Exportar a Excel</button>
+    <button onclick="borrarTodos()">Borrar Todos</button>
+
+    <div id="registroContainer"></div>
+
+    <!-- SheetJS para exportar a Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+
+    <script>
+        // Cargar registros guardados en localStorage al iniciar
+        const registros = JSON.parse(localStorage.getItem("registros")) || [];
+
+        function guardarRegistros() {
+            localStorage.setItem("registros", JSON.stringify(registros));
+        }
+
+        // Función para agregar un nuevo registro
+        function agregarRegistro() {
+            const matricula = document.getElementById("matricula").value.trim();
+            const nombre = document.getElementById("nombre").value.trim();
+
+            if (!matricula || !nombre) {
+                alert("Por favor, complete todos los campos.");
+                return;
+            }
+
+            const nuevoRegistro = { matricula, nombre };
+            registros.push(nuevoRegistro);
+            guardarRegistros();
+            document.getElementById("matricula").value = "";
+            document.getElementById("nombre").value = "";
+
+            mostrarRegistros();
+        }
+
+        // Función para mostrar todos los registros en pantalla
+        function mostrarRegistros() {
+            const registroContainer = document.getElementById("registroContainer");
+            registroContainer.innerHTML = ""; // Limpiar el contenido
+
+            registros.forEach((registro, index) => {
+                const div = document.createElement("div");
+                div.classList.add("entry");
+                div.innerHTML = `<strong>Matrícula:</strong> ${registro.matricula} <br> <strong>Nombre:</strong> ${registro.nombre} <br>
+                                 <button onclick="borrarRegistro(${index})">Borrar</button>`;
+                registroContainer.appendChild(div);
+            });
+        }
+
+        // Función para borrar un registro específico
+        function borrarRegistro(index) {
+            registros.splice(index, 1);
+            guardarRegistros();
+            mostrarRegistros();
+        }
+
+        // Función para borrar todos los registros
+        function borrarTodos() {
+            if (confirm("¿Estás seguro de que deseas borrar todos los registros?")) {
+                localStorage.removeItem("registros");
+                registros.length = 0; // Vaciar el array
+                mostrarRegistros();
+            }
+        }
+
+        // Función para exportar los registros a Excel
+        function exportarExcel() {
+            const data = registros.map(registro => ({
+                "Matrícula": registro.matricula,
+                "Nombre": registro.nombre
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Registros");
+            XLSX.writeFile(wb, "registros_matriculas.xlsx");
+        }
+
+        // Mostrar los registros al cargar la página
+        window.onload = mostrarRegistros;
+    </script>
+
+</body>
+</html>
+
